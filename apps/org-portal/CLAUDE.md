@@ -106,6 +106,33 @@ until the server answers 431.
   `Resident` type, distinguished by `service`. Copy says "Residents and clients"
   where both appear.
 
+## The client
+
+Built for **Oasis HomeCare Services** (nursing home and domiciliary care),
+House No. GF 41, Somervilla Street, near Apolonia City Gate, Apolonia, Kpone
+Katamanso, Greater Accra (GPS GK-0754-8616). The demo's first workspace is
+their Apolonia home; the Dansoman and Tema branches are invented.
+
+Their paper **Client Assessment Booklet** is the source for assessment and
+care plan content. It has 24 forms, OHS-01 to OHS-24: personal & social
+profile, mental capacity (best-interest decision), personal history,
+communication, cultural/spiritual, environment, domestic, personal hygiene,
+oral care, skin, continence, nutrition & hydration, medication, moving &
+handling, activity risk, bathing & showering risk, mental health, clinical,
+privacy notice (Data Protection Act 2012, Act 843), sleeping, behaviours that
+may challenge, equipment, financial, body map. Most follow one shape: Yes/No
+questions, "My Goals" and "What's Important to Me?" in the client's own words,
+who was involved, and a "Staff Use Only" checklist. Use their wording when
+building assessment templates.
+
+The booklet lives in `app/lib/assessment-templates.ts` as data: each form is a
+list of blocks (`yes_no`, `text`, `fields`, `choice`, `checklist`, `table`,
+`body_map`) rendered by `modules/assessments/form-blocks.tsx`. Staff-only
+questions are flagged and don't block completion. A form's
+`care_plan_section` is the section it fills via "Use in care plan", which opens
+the care plan editor with `?from_assessment=OHS-xx` — it never edits a plan
+directly.
+
 ## Data access
 
 Same as property-manager:

@@ -12,6 +12,7 @@ export const SELECT_WORKSPACE_ROUTE = '/select-workspace'
 export const QUERY_KEYS = {
 	CURRENT_USER: 'current-user',
 	WORKSPACE_OVERVIEW: 'workspace-overview',
+	NEEDS_ATTENTION: 'needs-attention',
 	RESIDENTS: 'residents',
 	RESIDENT: 'resident',
 	RESIDENT_SUMMARY: 'resident-summary',
@@ -21,6 +22,7 @@ export const QUERY_KEYS = {
 	VISITS: 'visits',
 	ROTA: 'rota',
 	STAFF: 'staff',
+	RISK_ASSESSMENTS: 'risk-assessments',
 } as const
 
 export const PAGINATION_DEFAULTS = {

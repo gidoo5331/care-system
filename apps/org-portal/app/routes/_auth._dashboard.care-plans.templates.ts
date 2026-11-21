@@ -1,7 +1,12 @@
-import { CarePlansComingSoonModule } from '~/modules'
+import { APP_NAME } from '~/lib/constants'
+import { AssessmentTemplatesModule } from '~/modules'
 
 export const handle = {
 	breadcrumb: 'Assessment templates',
 }
 
-export default CarePlansComingSoonModule
+export function meta() {
+	return [{ title: `Assessment templates - ${APP_NAME}` }]
+}
+
+export default AssessmentTemplatesModule

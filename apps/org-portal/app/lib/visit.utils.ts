@@ -46,7 +46,7 @@ const STATUS: Record<
 	IN_PROGRESS: {
 		label: 'In progress',
 		tone: 'info',
-		className: 'bg-accent text-accent-foreground border-transparent',
+		className: 'bg-info-tint text-info-ink border-info',
 	},
 	UPCOMING: {
 		label: 'Upcoming',

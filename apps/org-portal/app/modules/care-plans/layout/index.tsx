@@ -28,7 +28,9 @@ function CarePlansNav({ counts }: { counts: CarePlanCounts }) {
 	const isListPage = pathname === '/care-plans'
 	const isAllActive =
 		(isListPage && !view) ||
-		(pathname.startsWith('/care-plans/') && !STATIC_PAGES.has(pathname))
+		(pathname.startsWith('/care-plans/') &&
+			!STATIC_PAGES.has(pathname) &&
+			!pathname.startsWith('/care-plans/templates/'))
 
 	return (
 		<>

@@ -10,7 +10,7 @@ import {
 	UsersIcon,
 	type LucideIcon,
 } from 'lucide-react'
-import { Link, NavLink } from 'react-router'
+import { Link, useMatch } from 'react-router'
 import { BrandMark } from './brand-mark'
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip'
 import { cn } from '~/lib/utils'
@@ -41,24 +41,25 @@ const SETTINGS: RailItem = {
 
 function RailLink({ item }: { item: RailItem }) {
 	const Icon = item.icon
+	// Radix's Slot stringifies function classNames, so NavLink's render-prop
+	// className can't be used under TooltipTrigger asChild.
+	const isActive = Boolean(useMatch({ path: item.to, end: item.end ?? false }))
 	return (
 		<Tooltip>
 			<TooltipTrigger asChild>
-				<NavLink
+				<Link
 					to={item.to}
-					end={item.end}
 					aria-label={item.label}
-					className={({ isActive }) =>
-						cn(
-							'focus-visible:ring-primary relative flex size-12 items-center justify-center rounded-xl transition-colors outline-none focus-visible:ring-2',
-							isActive
-								? 'bg-navy-raised text-white'
-								: 'text-navy-muted hover:bg-navy-raised hover:text-white',
-						)
-					}
+					aria-current={isActive ? 'page' : undefined}
+					className={cn(
+						'focus-visible:ring-primary relative flex size-12 items-center justify-center rounded-xl transition-colors outline-none focus-visible:ring-2',
+						isActive
+							? 'bg-navy-raised text-white'
+							: 'text-navy-muted hover:bg-navy-raised hover:text-white',
+					)}
 				>
 					<Icon className="size-[22px]" strokeWidth={1.75} />
-				</NavLink>
+				</Link>
 			</TooltipTrigger>
 			<TooltipContent side="right">{item.label}</TooltipContent>
 		</Tooltip>

@@ -1,3 +1,5 @@
+import { findAssessment, listAssessments, saveAssessment } from './assessments'
+import { findCarePlan } from './care-plans'
 import { fail, ok, paginate, readJson } from './http'
 import {
 	filterIncidents,
@@ -7,6 +9,25 @@ import {
 	reviewIncident,
 	validateIncidentReport,
 } from './incidents'
+import {
+	createCarePlan,
+	listRiskAssessments,
+	saveCarePlan,
+	validatePlanInput,
+} from './plan-editing'
+import {
+	addAppointment,
+	addContact,
+	addDocument,
+	addNote,
+	getAppointments,
+	getDocuments,
+	getMovementsOverview,
+	getNotes,
+	importResidents,
+	recordMovement,
+} from './records'
+import { findResident } from './residents'
 import { getRotaWeek } from './rota'
 import {
 	buildReport,
@@ -22,6 +43,125 @@ import {
 } from './staff'
 import { demoUser } from './users'
 import { assignVisit, getVisitCarers, getVisitDay } from './visits'
+
+/**
+ * Runs before the generic resident and care plan handlers, which would
+ * otherwise read `/residents/import` as a resident with the id "import".
+ */
+export function handleRecords({
+	method,
+	rest,
+	searchParams,
+	init,
+}: WorkspaceRequest) {
+	const actor = demoUser.name
+	const body = () => readJson(init)
+
+	if (rest === '/residents/import' && method === 'POST') {
+		const rows = (body().rows ?? []) as Array<Partial<CreateResidentInput>>
+		const outcome = importResidents(rows)
+		return outcome.error ? fail(outcome.error, 400) : ok(outcome.result, 201)
+	}
+
+	if (rest === '/residents/movements') {
+		if (method === 'GET') return ok(getMovementsOverview())
+		const outcome = recordMovement(
+			body() as Partial<CreateMovementInput>,
+			actor,
+		)
+		return outcome.error ? fail(outcome.error, 400) : ok(outcome.movement, 201)
+	}
+
+	if (rest === '/appointments') {
+		if (method === 'GET') return ok(getAppointments(searchParams))
+		const outcome = addAppointment(body() as Partial<CreateAppointmentInput>)
+		return outcome.error
+			? fail(outcome.error, 400)
+			: ok(outcome.appointment, 201)
+	}
+
+	if (rest === '/care-plans/assessments' && method === 'GET') {
+		return ok(paginate(listRiskAssessments(searchParams), searchParams))
+	}
+
+	if (rest === '/care-plans' && method === 'POST') {
+		const input = body() as Partial<CreateCarePlanInput>
+		const error = validatePlanInput(input)
+		if (error) return fail(error, 400)
+		const outcome = createCarePlan(input as CreateCarePlanInput, actor)
+		return outcome.error ? fail(outcome.error, 409) : ok(outcome.plan, 201)
+	}
+
+	const planMatch = rest.match(/^\/care-plans\/([^/]+)$/)
+	if (planMatch && method === 'POST') {
+		const plan = findCarePlan(planMatch[1] ?? '')
+		if (!plan) return fail('Care plan not found', 404)
+		const input = body() as Partial<SaveCarePlanInput>
+		const error = validatePlanInput(input)
+		if (error) return fail(error, 400)
+		const outcome = saveCarePlan(plan, input as SaveCarePlanInput, actor)
+		return outcome.error ? fail(outcome.error, 409) : ok(outcome.plan)
+	}
+
+	const assessmentMatch = rest.match(
+		/^\/residents\/([^/]+)\/assessments(?:\/([A-Za-z0-9-]+))?$/,
+	)
+	if (assessmentMatch) {
+		const resident = findResident(assessmentMatch[1] ?? '')
+		if (!resident) return fail('Resident not found', 404)
+		const code = assessmentMatch[2]
+		if (!code) return method === 'GET' ? ok(listAssessments(resident.id)) : null
+		if (method === 'GET') {
+			const assessment = findAssessment(resident.id, code.toUpperCase())
+			return assessment ? ok(assessment) : fail('Not started', 404)
+		}
+		const outcome = saveAssessment(
+			resident.id,
+			code,
+			body() as Partial<SaveAssessmentInput>,
+			actor,
+		)
+		return outcome.error ? fail(outcome.error, 400) : ok(outcome.assessment)
+	}
+
+	const recordMatch = rest.match(
+		/^\/residents\/([^/]+)\/(notes|documents|contacts)$/,
+	)
+	if (!recordMatch) return null
+	const resident = findResident(recordMatch[1] ?? '')
+	if (!resident) return fail('Resident not found', 404)
+
+	switch (`${method} ${recordMatch[2]}`) {
+		case 'GET notes':
+			return ok(getNotes(resident))
+		case 'POST notes': {
+			const outcome = addNote(
+				resident,
+				body() as Partial<CreateNoteInput>,
+				actor,
+			)
+			return outcome.error ? fail(outcome.error, 400) : ok(outcome.note, 201)
+		}
+		case 'GET documents':
+			return ok(getDocuments(resident))
+		case 'POST documents': {
+			const outcome = addDocument(
+				resident,
+				body() as Partial<CreateDocumentInput>,
+				actor,
+			)
+			return outcome.error
+				? fail(outcome.error, 400)
+				: ok(outcome.document, 201)
+		}
+		case 'POST contacts': {
+			const outcome = addContact(resident, body() as Partial<ResidentContact>)
+			return outcome.error ? fail(outcome.error, 400) : ok(outcome.contact, 201)
+		}
+		default:
+			return null
+	}
+}
 
 export interface WorkspaceRequest {
 	method: string

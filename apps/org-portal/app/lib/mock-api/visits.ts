@@ -1,3 +1,4 @@
+import dayjs from 'dayjs'
 import { todayAt } from './http'
 import { toMinutes } from '~/lib/visit.utils'
 
@@ -130,38 +131,57 @@ const unassigned: Array<Visit> = [
 const byStart = (a: Visit, b: Visit) =>
 	toMinutes(a.start_time) - toMinutes(b.start_time)
 
+// Seeds only record lateness; everything else follows the clock so the
+// timeline agrees with its now-line whenever the demo is opened.
+function withLiveStatus(visit: Visit, now: number): Visit {
+	if (visit.status === 'LATE' || visit.status === 'MISSED') return visit
+	const start = toMinutes(visit.start_time)
+	const end = start + visit.duration_minutes
+	let status: VisitStatus = 'UPCOMING'
+	if (now >= end) status = visit.carer_id ? 'DONE' : 'MISSED'
+	else if (now >= start) status = visit.carer_id ? 'IN_PROGRESS' : 'LATE'
+	return { ...visit, status }
+}
+
 export function getVisitDay(searchParams: URLSearchParams): VisitDay {
 	const view = searchParams.get('view') as VisitListView | null
-	const all = [...carers.flatMap((c) => c.visits), ...unassigned]
+	const now = dayjs()
+	const nowMinutes = now.hour() * 60 + now.minute()
+	const live = (visits: Array<Visit>) =>
+		visits.map((v) => withLiveStatus(v, nowMinutes)).sort(byStart)
+	const isLateOrMissed = (v: Visit) =>
+		v.status === 'LATE' || v.status === 'MISSED'
+
+	const liveCarers = carers.map((carer) => ({
+		...carer,
+		visits: live(carer.visits),
+	}))
+	const liveUnassigned = live(unassigned)
+	const all = [...liveCarers.flatMap((c) => c.visits), ...liveUnassigned]
 	const done = all.filter((v) => v.status === 'DONE')
 
 	const visibleCarers =
 		view === 'unassigned'
 			? []
-			: carers
-					.map((carer) => ({
-						...carer,
-						visits:
-							view === 'late'
-								? carer.visits.filter(
-										(v) => v.status === 'LATE' || v.status === 'MISSED',
-									)
-								: [...carer.visits].sort(byStart),
-					}))
-					.filter((carer) => view !== 'late' || carer.visits.length)
+			: view === 'late'
+				? liveCarers
+						.map((carer) => ({
+							...carer,
+							visits: carer.visits.filter(isLateOrMissed),
+						}))
+						.filter((carer) => carer.visits.length)
+				: liveCarers
 
 	return {
 		date: todayAt('00:00'),
 		branch_name: 'Oasis Homecare, Dansoman branch',
 		carers: visibleCarers,
-		unassigned: view === 'late' ? [] : [...unassigned].sort(byStart),
+		unassigned: view === 'late' ? [] : liveUnassigned,
 		stats: {
 			total: all.length,
 			done: done.length,
 			on_time: done.length,
-			late_or_missed: all.filter(
-				(v) => v.status === 'LATE' || v.status === 'MISSED',
-			).length,
+			late_or_missed: all.filter(isLateOrMissed).length,
 			unassigned: unassigned.length,
 		},
 	}

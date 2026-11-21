@@ -1,4 +1,5 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { getForClient } from '~/lib/client-request'
 import { QUERY_KEYS } from '~/lib/constants'
 import { getQueryParams } from '~/lib/get-param'
 import { fetchClient } from '~/lib/transport'
@@ -33,6 +34,27 @@ export const useGetCarePlans = (
 	useQuery({
 		queryKey: [QUERY_KEYS.CARE_PLANS, workspaceId, query],
 		queryFn: () => getCarePlans(workspaceId, query),
+		enabled: Boolean(workspaceId),
+		placeholderData: keepPreviousData,
+	})
+
+export const useGetRiskAssessments = (
+	workspaceId: string,
+	query: { level?: RiskLevel; query?: string; page: number },
+) =>
+	useQuery({
+		queryKey: [QUERY_KEYS.RISK_ASSESSMENTS, workspaceId, query],
+		queryFn: () => {
+			const params = new URLSearchParams({
+				page: String(query.page),
+				page_size: '20',
+			})
+			if (query.level) params.set('level', query.level)
+			if (query.query) params.set('query', query.query)
+			return getForClient<FetchMultipleDataResponse<RiskAssessmentRow>>(
+				`/v1/admin/workspaces/${workspaceId}/care-plans/assessments?${params.toString()}`,
+			)
+		},
 		enabled: Boolean(workspaceId),
 		placeholderData: keepPreviousData,
 	})

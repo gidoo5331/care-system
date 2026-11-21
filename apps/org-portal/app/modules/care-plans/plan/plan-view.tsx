@@ -62,7 +62,7 @@ function SectionCard({ plan, section }: Props & { section: CarePlanSection }) {
 				<CardTitle id={headingId}>{section.title}</CardTitle>
 				<CardAction>
 					<Link
-						to={`/care-plans/${plan.id}/sections/${section.id}`}
+						to={`/care-plans/${plan.id}/edit#section-${section.id}`}
 						aria-label={`Edit ${section.title}`}
 						className={buttonVariants({ variant: 'outline' })}
 					>
@@ -140,7 +140,7 @@ function RiskAssessments({ plan }: Props) {
 				<CardTitle id="risk-assessments">Risk assessments</CardTitle>
 				<CardAction>
 					<Link
-						to={`/care-plans/${plan.id}/risk-assessments/new`}
+						to={`/care-plans/${plan.id}/edit#risk-assessments`}
 						className={buttonVariants({ variant: 'outline' })}
 					>
 						Add

@@ -1,5 +1,5 @@
 import { ClipboardListIcon } from 'lucide-react'
-import { Link, useLoaderData } from 'react-router'
+import { Link, useLoaderData, useParams } from 'react-router'
 import { Badge } from '~/components/ui/badge'
 import { buttonVariants } from '~/components/ui/button'
 import {
@@ -15,6 +15,7 @@ import type { loader } from '~/routes/_auth._dashboard.residents.$residentId.car
 
 export function ResidentCarePlanModule() {
 	const { plan } = useLoaderData<typeof loader>()
+	const { residentId } = useParams()
 
 	if (!plan) {
 		return (
@@ -28,7 +29,10 @@ export function ResidentCarePlanModule() {
 						Write one so staff know how to support them.
 					</p>
 				</div>
-				<Link to="/care-plans/new" className={buttonVariants()}>
+				<Link
+					to={`/care-plans/new?resident=${residentId}`}
+					className={buttonVariants()}
+				>
 					Write care plan
 				</Link>
 			</div>

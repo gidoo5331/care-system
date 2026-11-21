@@ -2,9 +2,9 @@ const createdAt = new Date('2025-01-06T08:00:00Z')
 
 export const workspaces: Array<Workspace> = [
 	{
-		id: 'ws_care_home_east_legon',
+		id: 'ws_care_home_apolonia',
 		name: 'Oasis Homecare',
-		location: 'East Legon',
+		location: 'Apolonia',
 		type: 'CARE_HOME',
 		created_at: createdAt,
 		updated_at: createdAt,

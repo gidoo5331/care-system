@@ -70,3 +70,150 @@ export const createPrescriptionForServer = (
 		input,
 		apiConfig,
 	)
+
+export const getResidentNotesForServer = (
+	workspaceId: string,
+	residentId: string,
+	apiConfig: ApiConfigForServerConfig,
+) =>
+	getForServer<Array<ResidentNoteEntry>>(
+		`${residentsPath(workspaceId)}/${residentId}/notes`,
+		apiConfig,
+	)
+
+export const addResidentNoteForServer = (
+	workspaceId: string,
+	residentId: string,
+	input: CreateNoteInput,
+	apiConfig: ApiConfigForServerConfig,
+) =>
+	postForServer<ResidentNoteEntry>(
+		`${residentsPath(workspaceId)}/${residentId}/notes`,
+		input,
+		apiConfig,
+	)
+
+export const getResidentDocumentsForServer = (
+	workspaceId: string,
+	residentId: string,
+	apiConfig: ApiConfigForServerConfig,
+) =>
+	getForServer<Array<ResidentDocument>>(
+		`${residentsPath(workspaceId)}/${residentId}/documents`,
+		apiConfig,
+	)
+
+export const addResidentDocumentForServer = (
+	workspaceId: string,
+	residentId: string,
+	input: CreateDocumentInput,
+	apiConfig: ApiConfigForServerConfig,
+) =>
+	postForServer<ResidentDocument>(
+		`${residentsPath(workspaceId)}/${residentId}/documents`,
+		input,
+		apiConfig,
+	)
+
+export const addResidentContactForServer = (
+	workspaceId: string,
+	residentId: string,
+	input: ResidentContact,
+	apiConfig: ApiConfigForServerConfig,
+) =>
+	postForServer<ResidentContact>(
+		`${residentsPath(workspaceId)}/${residentId}/contacts`,
+		input,
+		apiConfig,
+	)
+
+export const importResidentsForServer = (
+	workspaceId: string,
+	rows: Array<CreateResidentInput>,
+	apiConfig: ApiConfigForServerConfig,
+) =>
+	postForServer<ImportResidentsResult>(
+		`${residentsPath(workspaceId)}/import`,
+		{ rows },
+		apiConfig,
+	)
+
+export const getMovementsForServer = (
+	workspaceId: string,
+	apiConfig: ApiConfigForServerConfig,
+) =>
+	getForServer<MovementsOverview>(
+		`${residentsPath(workspaceId)}/movements`,
+		apiConfig,
+	)
+
+export const recordMovementForServer = (
+	workspaceId: string,
+	input: CreateMovementInput,
+	apiConfig: ApiConfigForServerConfig,
+) =>
+	postForServer<ResidentMovement>(
+		`${residentsPath(workspaceId)}/movements`,
+		input,
+		apiConfig,
+	)
+
+export const getAppointmentsForServer = (
+	workspaceId: string,
+	range: 'today' | 'week' | 'month',
+	apiConfig: ApiConfigForServerConfig,
+) =>
+	getForServer<Array<Appointment>>(
+		`/v1/admin/workspaces/${workspaceId}/appointments?range=${range}`,
+		apiConfig,
+	)
+
+export const addAppointmentForServer = (
+	workspaceId: string,
+	input: CreateAppointmentInput,
+	apiConfig: ApiConfigForServerConfig,
+) =>
+	postForServer<Appointment>(
+		`/v1/admin/workspaces/${workspaceId}/appointments`,
+		input,
+		apiConfig,
+	)
+
+export const getResidentAssessmentsForServer = (
+	workspaceId: string,
+	residentId: string,
+	apiConfig: ApiConfigForServerConfig,
+) =>
+	getForServer<Array<ResidentAssessment>>(
+		`${residentsPath(workspaceId)}/${residentId}/assessments`,
+		apiConfig,
+	)
+
+export const getResidentAssessmentForServer = async (
+	workspaceId: string,
+	residentId: string,
+	code: string,
+	apiConfig: ApiConfigForServerConfig,
+) => {
+	try {
+		return await getForServer<ResidentAssessment>(
+			`${residentsPath(workspaceId)}/${residentId}/assessments/${code}`,
+			apiConfig,
+		)
+	} catch {
+		return null
+	}
+}
+
+export const saveResidentAssessmentForServer = (
+	workspaceId: string,
+	residentId: string,
+	code: string,
+	input: SaveAssessmentInput,
+	apiConfig: ApiConfigForServerConfig,
+) =>
+	postForServer<ResidentAssessment>(
+		`${residentsPath(workspaceId)}/${residentId}/assessments/${code}`,
+		input,
+		apiConfig,
+	)

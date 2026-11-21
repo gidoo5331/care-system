@@ -19,13 +19,20 @@ import {
 	validatePrescriptionInput,
 } from './medication'
 import {
+	getAttentionList,
+	getOpenAttention,
+	handleAttention,
+} from './needs-attention'
+import {
 	handleIncidents,
+	handleRecords,
 	handleSettings,
 	handleStaff,
 	handleVisits,
 	type WorkspaceRequest,
 } from './operations'
 import { careHomeOverview, homecareOverview } from './overview'
+import { countAppointmentsToday } from './records'
 import {
 	createResident,
 	filterResidents,
@@ -94,7 +101,12 @@ function handleResidents({
 		return ok(paginate(filterResidents(searchParams), searchParams))
 	}
 
-	if (rest === '/residents/counts') return ok(getResidentCounts())
+	if (rest === '/residents/counts') {
+		return ok({
+			...getResidentCounts(),
+			appointments_today: countAppointmentsToday(),
+		})
+	}
 
 	const match = rest.match(/^\/residents\/([^/]+)(\/[a-z-]+)?$/)
 	if (!match) return null
@@ -159,9 +171,23 @@ function handleWorkspace(
 	if (!workspace) return fail('Workspace not found', 404)
 
 	if (method === 'GET' && rest === '/overview') {
-		return ok(
-			workspace.type === 'CARE_HOME' ? careHomeOverview : homecareOverview,
+		const open = getOpenAttention(workspace)
+		return ok({
+			...(workspace.type === 'CARE_HOME' ? careHomeOverview : homecareOverview),
+			needs_attention: open.slice(0, 5),
+			needs_attention_count: open.length,
+		})
+	}
+	if (method === 'GET' && rest === '/needs-attention') {
+		return ok(getAttentionList(workspace, searchParams))
+	}
+	if (method === 'POST' && rest === '/needs-attention/handle') {
+		const result = handleAttention(
+			workspace,
+			readJson(init) as Partial<HandleAttentionInput>,
+			demoUser.name,
 		)
+		return result.error ? fail(result.error, 409) : ok(result.item)
 	}
 
 	const request: WorkspaceRequest = {
@@ -172,6 +198,7 @@ function handleWorkspace(
 		init,
 	}
 	return (
+		handleRecords(request) ??
 		handleResidents(request) ??
 		handleCarePlans(request) ??
 		handleMedication(request) ??

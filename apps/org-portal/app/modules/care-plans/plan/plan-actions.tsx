@@ -14,9 +14,9 @@ export function getCarePlanSubtitle(plan: CarePlan) {
 export function CarePlanActions({ plan }: { plan: CarePlan }) {
 	const primary =
 		plan.status === 'ACTIVE'
-			? { label: 'Start review', path: 'review' }
+			? { label: 'Start review', path: 'edit' }
 			: plan.status === 'AWAITING_APPROVAL'
-				? { label: 'Review and approve', path: 'approve' }
+				? { label: 'Review and approve', path: 'edit' }
 				: { label: 'Continue draft', path: 'edit' }
 
 	return (
