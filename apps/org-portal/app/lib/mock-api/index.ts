@@ -18,6 +18,13 @@ import {
 	getMedicationRound,
 	validatePrescriptionInput,
 } from './medication'
+import {
+	handleIncidents,
+	handleSettings,
+	handleStaff,
+	handleVisits,
+	type WorkspaceRequest,
+} from './operations'
 import { careHomeOverview, homecareOverview } from './overview'
 import {
 	createResident,
@@ -69,14 +76,6 @@ function handleAuth(method: string, path: string, init?: RequestInit) {
 	}
 
 	return null
-}
-
-interface WorkspaceRequest {
-	method: string
-	rest: string
-	workspace: Workspace
-	searchParams: URLSearchParams
-	init?: RequestInit
 }
 
 function handleResidents({
@@ -175,7 +174,11 @@ function handleWorkspace(
 	return (
 		handleResidents(request) ??
 		handleCarePlans(request) ??
-		handleMedication(request)
+		handleMedication(request) ??
+		handleIncidents(request) ??
+		handleVisits(request) ??
+		handleStaff(request) ??
+		handleSettings(request)
 	)
 }
 

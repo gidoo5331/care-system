@@ -47,7 +47,7 @@ export const getResidentOptionsForServer = async (
 	apiConfig: ApiConfigForServerConfig,
 ) => {
 	const page = await getForServer<FetchMultipleDataResponse<Resident>>(
-		`${residentsPath(workspaceId)}?service=CARE_HOME&page_size=500`,
+		`${residentsPath(workspaceId)}?page_size=500`,
 		apiConfig,
 	)
 	return page.rows

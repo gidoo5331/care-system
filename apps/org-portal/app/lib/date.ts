@@ -49,3 +49,23 @@ export function formatLongDate(date: Date | string) {
 		? value.format('D MMMM')
 		: value.format('D MMMM YYYY')
 }
+
+/** "today 07:42", "yesterday", or "17 Nov". */
+export function formatRelativeDay(date: Date | string, withTime = true) {
+	const value = dayjs(date)
+	if (value.isSame(dayjs(), 'day')) {
+		return withTime ? `today ${value.format('HH:mm')}` : 'today'
+	}
+	if (value.isSame(dayjs().subtract(1, 'day'), 'day')) return 'yesterday'
+	return formatShortDate(value.toDate())
+}
+
+/** "Fri 21" this week, "24 Nov" further out — for due dates. */
+export function formatDueDate(date: Date | string) {
+	const value = dayjs(date)
+	if (value.isSame(dayjs(), 'day')) return 'Today'
+	const days = value.startOf('day').diff(dayjs().startOf('day'), 'day')
+	return days > 0 && days < 7
+		? value.format('ddd D')
+		: formatShortDate(value.toDate())
+}

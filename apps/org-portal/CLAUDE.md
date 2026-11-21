@@ -80,6 +80,15 @@ types/                  Global ambient types (*.d.ts) — no imports needed
 - Breadcrumbs: `export const handle = { breadcrumb: 'Label' }` or a function of
   the route's loader data.
 - `_auth._dashboard.$.ts` catches unbuilt sections and shows "coming soon".
+  Inside a module, unbuilt pages render `<ComingSoonPanel>` via the module's
+  `XComingSoonModule`, so they keep that module's sub-nav.
+- Module sub-nav links that differ only by search params (saved views like
+  `?view=review-due`) pass `active` to `SubNavLink` — `NavLink` only matches on
+  pathname.
+- A leaf route has no `<Outlet/>`, so a child path under it never renders. Use
+  the trailing-underscore escape to make it a sibling instead:
+  `visits.rota_.copy.ts` for `/visits/rota/copy`, `$incidentId_.$.ts` for
+  anything under one incident.
 
 ### React Router v8 gotcha
 
@@ -101,8 +110,14 @@ until the server answers 431.
 
 Same as property-manager:
 
-- **Server-side (loaders):** `app/api/<resource>/server.ts`, called with
-  `{ authToken: await resolveAuthToken(request, context), baseUrl: environmentVariables().API_ADDRESS }`.
+- **Server-side (loaders/actions):** `app/api/<resource>/server.ts`, built on
+  `getForServer` / `postForServer` from `lib/server-request.ts`. In a route,
+  `const { workspaceId, apiConfig } = await getApiContext({ request, context })`
+  (`lib/actions/api-context.server.ts`) gives you both arguments.
+- **Client-side fetches:** `getForClient` from `lib/client-request.ts`.
+- **Tables:** `components/ui/table.tsx` for markup; `TableBodyContent` from
+  `components/table-states.tsx` handles loading, empty and error rows.
+- **CSV downloads:** `downloadCsv(filename, { columns, rows })` from `lib/csv.ts`.
 - **Client-side:** TanStack Query hooks in `app/api/<resource>/index.ts`. Detail
   pages pass loader data as `initialData`; list pages query from URL search
   params (`query`, `page`, filters) via `getQueryParams`.

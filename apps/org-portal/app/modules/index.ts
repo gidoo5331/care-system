@@ -25,3 +25,20 @@ export * from './care-plans/layout'
 export * from './care-plans'
 export * from './care-plans/plan'
 export * from './residents/resident/care-plan'
+
+export * from './incidents/layout'
+export * from './incidents'
+export * from './incidents/incident'
+export * from './incidents/new'
+
+export * from './visits/layout'
+export * from './visits'
+export * from './visits/rota'
+
+export * from './staff/layout'
+export * from './staff'
+export * from './staff/member'
+export * from './staff/member/training'
+
+export * from './reports'
+export * from './settings'
