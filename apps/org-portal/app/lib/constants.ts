@@ -12,4 +12,12 @@ export const SELECT_WORKSPACE_ROUTE = '/select-workspace'
 export const QUERY_KEYS = {
 	CURRENT_USER: 'current-user',
 	WORKSPACE_OVERVIEW: 'workspace-overview',
+	RESIDENTS: 'residents',
+	RESIDENT: 'resident',
+	RESIDENT_SUMMARY: 'resident-summary',
+} as const
+
+export const PAGINATION_DEFAULTS = {
+	PAGE: 1,
+	PER_PAGE: 20,
 } as const

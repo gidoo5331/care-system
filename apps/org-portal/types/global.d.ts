@@ -14,6 +14,23 @@ interface Pagination {
 	page?: NumberLike
 }
 
+interface Sorter {
+	sort?: 'asc' | 'desc'
+	sort_by?: string
+}
+
+interface Search {
+	query?: string
+	fields?: StringList
+}
+
+interface FetchMultipleDataInputParams<FilterT> {
+	pagination?: Pagination
+	sorter?: Sorter
+	filters?: FilterT
+	search?: Search
+}
+
 interface FetchMultipleDataResponse<T> {
 	rows: T[]
 	meta: {
