@@ -2,9 +2,18 @@ type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH'
 
 type ResidentStatus = 'ACTIVE' | 'IN_HOSPITAL' | 'DISCHARGED'
 
+type Gender = 'FEMALE' | 'MALE'
+
 interface ResidentNote {
 	summary: string
 	recorded_at: Date
+}
+
+interface ResidentContact {
+	name: string
+	relationship: string
+	phone_number: string
+	is_next_of_kin: boolean
 }
 
 interface Resident {
@@ -12,17 +21,26 @@ interface Resident {
 	code: string
 	first_name: string
 	last_name: string
+	preferred_name: Nullable<string>
+	gender: Gender
 	date_of_birth: Date
+	ghana_card_number: Nullable<string>
+	nhis_number: Nullable<string>
+	languages: StringList
 	service: WorkspaceType
 	room: Nullable<string>
 	unit_name: Nullable<string>
 	area: Nullable<string>
+	address: Nullable<string>
 	status: ResidentStatus
 	risk_level: RiskLevel
 	risk_reason: Nullable<string>
 	allergies: StringList
 	conditions: StringList
+	contacts: Array<ResidentContact>
 	admitted_at: Date
+	care_plan_id: Nullable<string>
+	care_plan_status: Nullable<CarePlanStatus>
 	care_plan_reviewed_at: Nullable<Date>
 	care_plan_review_due_at: Nullable<Date>
 	latest_note: Nullable<ResidentNote>
@@ -48,21 +66,25 @@ interface ResidentCounts {
 	appointments_today: number
 }
 
-type DoseStatus = 'GIVEN' | 'DUE' | 'MISSED' | 'REFUSED'
-
-interface ScheduledDose {
-	time: string
-	status: DoseStatus
-	detail: Nullable<string>
-}
-
-interface ResidentMedication {
-	id: string
-	name: string
-	instructions: string
-	is_as_needed: boolean
-	doses: Array<ScheduledDose>
-	last_given_label: Nullable<string>
+interface CreateResidentInput {
+	first_name: string
+	last_name: string
+	preferred_name?: string
+	gender: Gender
+	date_of_birth: string
+	service: WorkspaceType
+	ghana_card_number?: string
+	nhis_number?: string
+	languages: StringList
+	allergies: StringList
+	conditions: StringList
+	risk_level: RiskLevel
+	risk_reason?: string
+	room?: string
+	unit_name?: string
+	area?: string
+	address?: string
+	contacts: Array<ResidentContact>
 }
 
 interface ResidentReading {

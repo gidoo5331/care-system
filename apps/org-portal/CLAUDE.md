@@ -113,12 +113,28 @@ Same as property-manager:
 ## Mock API
 
 There is no backend yet. When `API_ADDRESS` is empty, `transport()` routes every
-request to `app/lib/mock-api` instead of the network — on server and client.
-Sign in with any email and the password `password`.
+request to `app/lib/mock-api` instead of the network. Sign in with any email and
+the password `password`.
+
+The mock is **server-only** and keeps its data in server memory, so saves
+(new residents, prescriptions) persist until the server restarts. Server code
+calls it directly; the browser reaches it through the `routes/mock-api.$.ts`
+relay. Only import `lib/mock-api/address.ts` from code that can run in the
+browser — never `lib/mock-api` itself.
 
 When adding an endpoint: add its handler and data under `lib/mock-api/` using
 the same path and `ApiResponse` shape the real API will have, so switching to
-the backend is only a matter of setting `API_ADDRESS`.
+the backend is only a matter of setting `API_ADDRESS`. Put business rules both
+sides need (e.g. `findAllergyConflict`) in `lib/*.utils.ts`, not in the mock.
+
+## Forms
+
+- React Hook Form + Zod; schema and value mapping live in a `schema.ts` next to
+  the module. Use `FormField` for label/hint/error wiring.
+- Submit with `fetcher.submit(toJsonPayload(input), { method: 'post', encType: 'application/json' })`
+  to the route's `action`, which calls `api/<resource>/server.ts` and redirects.
+- Before submitting, `queryClient.removeQueries` for any list/detail the
+  redirect lands on — otherwise it shows its cached, pre-save data.
 
 ## UI patterns
 

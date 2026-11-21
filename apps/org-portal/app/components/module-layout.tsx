@@ -42,14 +42,14 @@ export function ModuleLayout({
 		<div className="flex min-w-0 flex-1">
 			<aside
 				aria-label={label}
-				className="bg-card sticky top-0 hidden h-svh w-64 shrink-0 flex-col gap-0.5 overflow-y-auto border-r px-3 py-4 lg:flex"
+				className="bg-card sticky top-0 hidden h-svh w-64 shrink-0 flex-col gap-0.5 overflow-y-auto border-r px-3 py-4 lg:flex print:hidden"
 			>
 				<WorkspaceSwitcher />
 				{nav}
 			</aside>
 
 			<div className="flex min-w-0 flex-1 flex-col">
-				<header className="bg-card flex h-16 items-center gap-4 border-b px-4 md:px-8">
+				<header className="bg-card flex h-16 items-center gap-4 border-b px-4 md:px-8 print:hidden">
 					<nav
 						aria-label="Breadcrumb"
 						className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden text-sm whitespace-nowrap"

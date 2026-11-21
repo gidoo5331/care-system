@@ -1,5 +1,5 @@
 import { useParams } from 'react-router'
-import { ComingSoonPanel } from '../coming-soon'
+import { ComingSoonPanel } from '~/components/coming-soon-panel'
 
 export function ResidentTabComingSoonModule() {
 	const { residentId } = useParams()

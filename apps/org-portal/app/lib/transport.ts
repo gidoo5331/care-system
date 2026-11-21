@@ -1,4 +1,8 @@
-import { isMockApiUrl, mockFetch } from './mock-api'
+import {
+	isMockApiUrl,
+	MOCK_API_ADDRESS,
+	MOCK_API_RELAY_PATH,
+} from './mock-api/address'
 
 declare global {
 	interface Window {
@@ -14,13 +18,30 @@ declare global {
  * Fetch wrapper that rejects on 4xx - 5xx so callers can read the error body
  * in their catch block.
  */
+/**
+ * The mock keeps its data in server memory, so the browser must reach it
+ * through the relay route rather than a copy of its own — otherwise anything
+ * saved on the server would never show up in client-side queries.
+ */
+async function send(input: string, init?: RequestInit) {
+	if (!isMockApiUrl(input)) return fetch(input, init)
+
+	if (typeof window !== 'undefined') {
+		return fetch(
+			`${MOCK_API_RELAY_PATH}${input.slice(MOCK_API_ADDRESS.length)}`,
+			init,
+		)
+	}
+
+	const { mockFetch } = await import('./mock-api')
+	return mockFetch(input, init)
+}
+
 export async function transport(
 	input: string,
 	init?: RequestInit,
 ): Promise<Response> {
-	const response = isMockApiUrl(input)
-		? await mockFetch(input, init)
-		: await fetch(input, init)
+	const response = await send(input, init)
 
 	if (!response.ok) {
 		throw response

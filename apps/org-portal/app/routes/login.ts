@@ -9,7 +9,7 @@ import {
 import { environmentVariables } from '~/lib/actions/env.server'
 import { APP_NAME, SELECT_WORKSPACE_ROUTE } from '~/lib/constants'
 import { getDisplayUrl, getDomainUrl, getSafeReturnTo } from '~/lib/misc'
-import { MOCK_API_ADDRESS } from '~/lib/mock-api'
+import { MOCK_API_ADDRESS } from '~/lib/mock-api/address'
 import { getSocialMetas } from '~/lib/seo'
 import { isWorkspaceUserActive } from '~/lib/workspace.utils'
 import { LoginModule } from '~/modules'

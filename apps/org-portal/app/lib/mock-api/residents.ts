@@ -1,7 +1,7 @@
-import { daysAgo, daysFromNow, todayAt } from './http'
+import dayjs from 'dayjs'
+import { buildCarePlan, carePlans, type CarePlanSeed } from './care-plans'
+import { daysAgo, todayAt } from './http'
 import { getResidentName, isCarePlanReviewDue } from '~/lib/resident.utils'
-
-const CARE_PLAN_REVIEW_CYCLE_DAYS = 30
 
 type ResidentSeed = Pick<
 	Resident,
@@ -9,6 +9,7 @@ type ResidentSeed = Pick<
 	| 'code'
 	| 'first_name'
 	| 'last_name'
+	| 'gender'
 	| 'service'
 	| 'room'
 	| 'unit_name'
@@ -21,27 +22,55 @@ type ResidentSeed = Pick<
 	| 'latest_note'
 > & {
 	age: number
-	reviewed_days_ago: number
 	admitted_at: Date
+	contact?: ResidentContact
+	plan: CarePlanSeed
 }
 
-function yearsAgo(years: number) {
-	const date = daysAgo(0)
-	date.setFullYear(date.getFullYear() - years, 2, 1)
-	return date
+function birthDateForAge(age: number) {
+	return dayjs().subtract(age, 'year').month(2).date(1).toDate()
 }
 
 function toResident(seed: ResidentSeed): Resident {
-	const { age, reviewed_days_ago, ...rest } = seed
-	return {
+	const { age, plan: planSeed, contact, ...rest } = seed
+	const resident: Resident = {
 		...rest,
-		date_of_birth: yearsAgo(age),
-		care_plan_reviewed_at: daysAgo(reviewed_days_ago),
-		care_plan_review_due_at: daysFromNow(
-			CARE_PLAN_REVIEW_CYCLE_DAYS - reviewed_days_ago,
-		),
+		preferred_name: null,
+		date_of_birth: birthDateForAge(age),
+		ghana_card_number: null,
+		nhis_number: null,
+		languages: ['Twi', 'English'],
+		address: null,
+		contacts: contact
+			? [contact]
+			: [
+					{
+						name: `Ama ${seed.last_name}`,
+						relationship: 'Daughter',
+						phone_number: '+233 24 000 0000',
+						is_next_of_kin: true,
+					},
+				],
+		care_plan_id: null,
+		care_plan_status: null,
+		care_plan_reviewed_at: null,
+		care_plan_review_due_at: null,
 		created_at: seed.admitted_at,
 		updated_at: daysAgo(0),
+	}
+
+	const plan = buildCarePlan(resident, planSeed)
+	carePlans.push(plan)
+	return linkCarePlan(resident, plan)
+}
+
+export function linkCarePlan(resident: Resident, plan: CarePlan): Resident {
+	return {
+		...resident,
+		care_plan_id: plan.id,
+		care_plan_status: plan.status,
+		care_plan_reviewed_at: plan.last_reviewed_at,
+		care_plan_review_due_at: plan.next_review_at,
 	}
 }
 
@@ -51,6 +80,7 @@ const designedResidents: Array<ResidentSeed> = [
 		code: 'R-0112',
 		first_name: 'Kofi',
 		last_name: 'Asante',
+		gender: 'MALE',
 		age: 81,
 		service: 'CARE_HOME',
 		room: '12',
@@ -65,14 +95,21 @@ const designedResidents: Array<ResidentSeed> = [
 			summary: 'Refused breakfast',
 			recorded_at: todayAt('07:50'),
 		},
-		reviewed_days_ago: 18,
 		admitted_at: new Date('2025-03-14T10:00:00Z'),
+		contact: {
+			name: 'Kwame Asante',
+			relationship: 'Son',
+			phone_number: '+233 24 412 7781',
+			is_next_of_kin: true,
+		},
+		plan: { version: 6, status: 'ACTIVE', reviewed_days_ago: 18 },
 	},
 	{
 		id: 'res_efua_darko',
 		code: 'R-0104',
 		first_name: 'Efua',
 		last_name: 'Darko',
+		gender: 'FEMALE',
 		age: 88,
 		service: 'CARE_HOME',
 		room: '4',
@@ -84,14 +121,15 @@ const designedResidents: Array<ResidentSeed> = [
 		allergies: [],
 		conditions: ['Osteoporosis', 'Needs help of one'],
 		latest_note: { summary: 'Fall in bathroom', recorded_at: todayAt('07:42') },
-		reviewed_days_ago: 23,
 		admitted_at: new Date('2024-09-02T10:00:00Z'),
+		plan: { version: 3, status: 'ACTIVE', reviewed_days_ago: 23 },
 	},
 	{
 		id: 'res_nana_agyeman',
 		code: 'R-0109',
 		first_name: 'Nana',
 		last_name: 'Agyeman',
+		gender: 'FEMALE',
 		age: 76,
 		service: 'CARE_HOME',
 		room: '9',
@@ -103,14 +141,15 @@ const designedResidents: Array<ResidentSeed> = [
 		allergies: ['Shellfish'],
 		conditions: ['Dementia', 'Soft diet'],
 		latest_note: { summary: 'Ate half of lunch', recorded_at: daysAgo(1) },
-		reviewed_days_ago: 33,
 		admitted_at: new Date('2025-06-20T10:00:00Z'),
+		plan: { version: 4, status: 'ACTIVE', review_due_in_days: -3 },
 	},
 	{
 		id: 'res_abena_owusu',
 		code: 'H-2031',
 		first_name: 'Abena',
 		last_name: 'Owusu',
+		gender: 'FEMALE',
 		age: 73,
 		service: 'HOMECARE',
 		room: null,
@@ -122,14 +161,20 @@ const designedResidents: Array<ResidentSeed> = [
 		allergies: [],
 		conditions: ['Pressure area care', 'Lives alone'],
 		latest_note: { summary: 'Visit due 09:00', recorded_at: daysAgo(1) },
-		reviewed_days_ago: 8,
 		admitted_at: new Date('2025-08-11T10:00:00Z'),
+		plan: {
+			version: 2,
+			status: 'DRAFT',
+			reviewed_days_ago: 8,
+			written_by: 'Kwame Addo',
+		},
 	},
 	{
 		id: 'res_akua_sarpong',
 		code: 'H-2044',
 		first_name: 'Akua',
 		last_name: 'Sarpong',
+		gender: 'FEMALE',
 		age: 84,
 		service: 'HOMECARE',
 		room: null,
@@ -141,14 +186,40 @@ const designedResidents: Array<ResidentSeed> = [
 		allergies: ['Sulfa drugs'],
 		conditions: ['Insulin dependent', 'Partially sighted'],
 		latest_note: { summary: 'Blood sugar 11.2', recorded_at: daysAgo(1) },
-		reviewed_days_ago: 25,
 		admitted_at: new Date('2025-02-03T10:00:00Z'),
+		plan: { version: 2, status: 'ACTIVE', review_due_in_days: 5 },
+	},
+	{
+		id: 'res_yaa_asantewaa',
+		code: 'R-0106',
+		first_name: 'Yaa',
+		last_name: 'Asantewaa',
+		gender: 'FEMALE',
+		age: 78,
+		service: 'CARE_HOME',
+		room: '6',
+		unit_name: 'ground floor',
+		area: null,
+		status: 'ACTIVE',
+		risk_level: 'LOW',
+		risk_reason: null,
+		allergies: [],
+		conditions: ['Hypertension'],
+		latest_note: { summary: 'Settling in well', recorded_at: daysAgo(1) },
+		admitted_at: daysAgo(2),
+		plan: {
+			version: 1,
+			status: 'AWAITING_APPROVAL',
+			written_by: 'Kwame Addo',
+			is_new: true,
+		},
 	},
 	{
 		id: 'res_yaw_ofori',
 		code: 'R-0117',
 		first_name: 'Yaw',
 		last_name: 'Ofori',
+		gender: 'MALE',
 		age: 69,
 		service: 'CARE_HOME',
 		room: '17',
@@ -160,14 +231,15 @@ const designedResidents: Array<ResidentSeed> = [
 		allergies: ['Aspirin'],
 		conditions: ['Hypertension'],
 		latest_note: { summary: 'Walked in the garden', recorded_at: daysAgo(1) },
-		reviewed_days_ago: 11,
 		admitted_at: new Date('2025-10-01T10:00:00Z'),
+		plan: { version: 1, status: 'ACTIVE', reviewed_days_ago: 11 },
 	},
 	{
 		id: 'res_kwabena_mensah',
 		code: 'R-0121',
 		first_name: 'Kwabena',
 		last_name: 'Mensah',
+		gender: 'MALE',
 		age: 79,
 		service: 'CARE_HOME',
 		room: '21',
@@ -179,14 +251,15 @@ const designedResidents: Array<ResidentSeed> = [
 		allergies: [],
 		conditions: ['Parkinson’s'],
 		latest_note: { summary: 'Family visited', recorded_at: daysAgo(1) },
-		reviewed_days_ago: 5,
 		admitted_at: new Date('2025-04-22T10:00:00Z'),
+		plan: { version: 2, status: 'ACTIVE', reviewed_days_ago: 5 },
 	},
 	{
 		id: 'res_adwoa_frimpong',
 		code: 'R-0103',
 		first_name: 'Adwoa',
 		last_name: 'Frimpong',
+		gender: 'FEMALE',
 		age: 91,
 		service: 'CARE_HOME',
 		room: '3',
@@ -198,65 +271,28 @@ const designedResidents: Array<ResidentSeed> = [
 		allergies: ['Latex'],
 		conditions: ['Bed bound', 'Two-hourly turns'],
 		latest_note: { summary: 'Turned in bed', recorded_at: todayAt('06:00') },
-		reviewed_days_ago: 14,
 		admitted_at: new Date('2023-11-15T10:00:00Z'),
+		plan: { version: 5, status: 'ACTIVE', reviewed_days_ago: 14 },
 	},
 ]
 
+// prettier-ignore
 const FIRST_NAMES = [
-	'Akosua',
-	'Kwame',
-	'Yaa',
-	'Kojo',
-	'Afua',
-	'Kwesi',
-	'Ama',
-	'Fiifi',
-	'Esi',
-	'Kwaku',
-	'Adjoa',
-	'Ekow',
-	'Abena',
-	'Nii',
-	'Naa',
-	'Kobina',
-	'Araba',
-	'Kofi',
-	'Efua',
-	'Yaw',
+	'Akosua', 'Kwame', 'Yaa', 'Kojo', 'Afua', 'Kwesi', 'Ama', 'Fiifi', 'Esi',
+	'Kwaku', 'Adjoa', 'Ekow', 'Abena', 'Nii', 'Naa', 'Kobina', 'Araba', 'Kofi',
+	'Efua', 'Yaw',
 ]
 
+// prettier-ignore
 const LAST_NAMES = [
-	'Boateng',
-	'Appiah',
-	'Osei',
-	'Addo',
-	'Ansah',
-	'Quaye',
-	'Tetteh',
-	'Amoah',
-	'Bonsu',
-	'Danquah',
-	'Asamoah',
-	'Opoku',
-	'Badu',
-	'Nkrumah',
-	'Agyei',
-	'Acheampong',
-	'Lamptey',
-	'Ofori',
-	'Owusu',
-	'Mensah',
+	'Boateng', 'Appiah', 'Osei', 'Addo', 'Ansah', 'Quaye', 'Tetteh', 'Amoah',
+	'Bonsu', 'Danquah', 'Asamoah', 'Opoku', 'Badu', 'Nkrumah', 'Agyei',
+	'Acheampong', 'Lamptey', 'Ofori', 'Owusu', 'Mensah',
 ]
 
+// prettier-ignore
 const HOMECARE_AREAS = [
-	'Dansoman',
-	'Kaneshie',
-	'Tema',
-	'Spintex',
-	'Osu',
-	'Labadi',
-	'Madina',
+	'Dansoman', 'Kaneshie', 'Tema', 'Spintex', 'Osu', 'Labadi', 'Madina',
 	'Achimota',
 ]
 
@@ -297,18 +333,32 @@ const RISK_POOL: Array<[RiskLevel, Nullable<string>]> = [
 	['LOW', null],
 ]
 
-const GENERATED_CARE_HOME = 36
+const GENERATED_CARE_HOME = 35
 const GENERATED_HOMECARE = 29
 const HIGH_RISK_AT = new Set([7, 23, 41])
 const REVIEW_DUE_AT = new Set([12, 50])
 const IN_HOSPITAL_AT = new Set([3, 30])
+const AWAITING_APPROVAL_AT = new Set([19])
+
+function generatedPlanSeed(i: number): CarePlanSeed {
+	if (AWAITING_APPROVAL_AT.has(i)) {
+		return { version: 1, status: 'AWAITING_APPROVAL' }
+	}
+	if (REVIEW_DUE_AT.has(i)) {
+		return { version: 2, status: 'ACTIVE', review_due_in_days: 2 }
+	}
+	return {
+		version: 1 + (i % 3),
+		status: 'ACTIVE',
+		reviewed_days_ago: 2 + (i % 70),
+	}
+}
 
 function generateResidents(): Array<ResidentSeed> {
 	const total = GENERATED_CARE_HOME + GENERATED_HOMECARE
 	return Array.from({ length: total }, (_, i): ResidentSeed => {
 		const isCareHome = i < GENERATED_CARE_HOME
-		const firstName = FIRST_NAMES[i % FIRST_NAMES.length] ?? 'Ama'
-		const lastName = LAST_NAMES[(i * 7 + 3) % LAST_NAMES.length] ?? 'Mensah'
+		const nameIndex = i % FIRST_NAMES.length
 		const [riskLevel, riskReason] = HIGH_RISK_AT.has(i)
 			? (['HIGH', 'falls'] as const)
 			: (RISK_POOL[i % RISK_POOL.length] ?? ['LOW', null])
@@ -318,8 +368,9 @@ function generateResidents(): Array<ResidentSeed> {
 			code: isCareHome
 				? `R-${String(130 + i).padStart(4, '0')}`
 				: `H-${2050 + i}`,
-			first_name: firstName,
-			last_name: lastName,
+			first_name: FIRST_NAMES[nameIndex] ?? 'Ama',
+			last_name: LAST_NAMES[(i * 7 + 3) % LAST_NAMES.length] ?? 'Mensah',
+			gender: nameIndex % 2 === 0 ? 'FEMALE' : 'MALE',
 			age: 65 + ((i * 13) % 31),
 			service: isCareHome ? 'CARE_HOME' : 'HOMECARE',
 			room: isCareHome ? String(22 + i) : null,
@@ -336,8 +387,8 @@ function generateResidents(): Array<ResidentSeed> {
 				summary: NOTE_POOL[i % NOTE_POOL.length] ?? 'Comfortable',
 				recorded_at: daysAgo(1 + (i % 3)),
 			},
-			reviewed_days_ago: REVIEW_DUE_AT.has(i) ? 28 : 2 + (i % 18),
 			admitted_at: daysAgo(60 + i * 11),
+			plan: generatedPlanSeed(i),
 		}
 	})
 }
@@ -346,6 +397,10 @@ export const residents: Array<Resident> = [
 	...designedResidents,
 	...generateResidents(),
 ].map(toResident)
+
+export function findResident(id: string) {
+	return residents.find((resident) => resident.id === id)
+}
 
 const VIEW_PREDICATES: Record<ResidentListView, (r: Resident) => boolean> = {
 	'high-risk': (r) => r.risk_level === 'HIGH',
@@ -398,168 +453,73 @@ export function getResidentCounts(): ResidentCounts {
 	}
 }
 
-const ROUND_TIMES = ['08:00', '13:00', '18:00', '22:00']
-
-const kofiSummary: ResidentSummary = {
-	round_times: ROUND_TIMES,
-	medications: [
-		{
-			id: 'med_metformin',
-			name: 'Metformin 500 mg',
-			instructions: '1 tablet, with food',
-			is_as_needed: false,
-			last_given_label: null,
-			doses: [
-				{ time: '08:00', status: 'MISSED', detail: 'not recorded' },
-				{ time: '13:00', status: 'DUE', detail: 'in 2 h' },
-				{ time: '18:00', status: 'DUE', detail: null },
-			],
-		},
-		{
-			id: 'med_amlodipine',
-			name: 'Amlodipine 5 mg',
-			instructions: '1 tablet, once a day',
-			is_as_needed: false,
-			last_given_label: null,
-			doses: [{ time: '08:00', status: 'GIVEN', detail: '08:06 · EQ' }],
-		},
-		{
-			id: 'med_atorvastatin',
-			name: 'Atorvastatin 20 mg',
-			instructions: '1 tablet, at night',
-			is_as_needed: false,
-			last_given_label: null,
-			doses: [{ time: '22:00', status: 'DUE', detail: null }],
-		},
-		{
-			id: 'med_calcium',
-			name: 'Calcium and vitamin D',
-			instructions: '1 tablet, twice a day',
-			is_as_needed: false,
-			last_given_label: null,
-			doses: [
-				{ time: '08:00', status: 'REFUSED', detail: 'EQ · noted' },
-				{ time: '18:00', status: 'DUE', detail: null },
-			],
-		},
-		{
-			id: 'med_paracetamol',
-			name: 'Paracetamol 500 mg',
-			instructions: '1 to 2 tablets for pain',
-			is_as_needed: true,
-			last_given_label: 'Last given yesterday 21:40',
-			doses: [],
-		},
-	],
-	latest_readings: {
-		recorded_at: todayAt('07:30'),
-		recorded_by: 'Esi Quaye',
-		readings: [
-			{ id: 'bp', label: 'Blood pressure', value: '138/84', tone: 'neutral' },
-			{ id: 'pulse', label: 'Pulse', value: '76 bpm', tone: 'neutral' },
-			{
-				id: 'sugar',
-				label: 'Blood sugar',
-				value: '9.8 mmol/L',
-				tone: 'warning',
-			},
-			{ id: 'temp', label: 'Temperature', value: '36.7 °C', tone: 'neutral' },
-		],
-	},
-	today: [
-		{
-			id: 't1',
-			time: '07:50',
-			title: 'Refused breakfast',
-			detail: 'Said he felt full · Akosua Badu',
-		},
-		{
-			id: 't2',
-			time: '07:30',
-			title: 'Readings taken',
-			detail: 'Blood sugar above usual · Esi Quaye',
-		},
-		{
-			id: 't3',
-			time: '07:10',
-			title: 'Washed and dressed',
-			detail: 'Help of one · Akosua Badu',
-		},
-		{
-			id: 't4',
-			time: '06:00',
-			title: 'Night handover',
-			detail: 'Slept well · Kwame Addo',
-		},
-	],
+function nextCode(service: WorkspaceType) {
+	const prefix = service === 'CARE_HOME' ? 'R-' : 'H-'
+	const highest = residents
+		.filter((r) => r.code.startsWith(prefix))
+		.map((r) => Number(r.code.slice(prefix.length)))
+		.reduce((max, n) => Math.max(max, n), 0)
+	return `${prefix}${String(highest + 1).padStart(4, '0')}`
 }
 
-function genericSummary(resident: Resident): ResidentSummary {
-	const isCareHome = resident.service === 'CARE_HOME'
-	return {
-		round_times: ROUND_TIMES,
-		medications: [
-			{
-				id: 'med_amlodipine',
-				name: 'Amlodipine 5 mg',
-				instructions: '1 tablet, once a day',
-				is_as_needed: false,
-				last_given_label: null,
-				doses: [{ time: '08:00', status: 'GIVEN', detail: '08:10 · EQ' }],
-			},
-			{
-				id: 'med_vitamin_d',
-				name: 'Vitamin D 1000 IU',
-				instructions: '1 tablet, with food',
-				is_as_needed: false,
-				last_given_label: null,
-				doses: [{ time: '13:00', status: 'DUE', detail: null }],
-			},
-			{
-				id: 'med_paracetamol',
-				name: 'Paracetamol 500 mg',
-				instructions: '1 to 2 tablets for pain',
-				is_as_needed: true,
-				last_given_label: 'Not given in the last 7 days',
-				doses: [],
-			},
-		],
-		latest_readings: {
-			recorded_at: todayAt('07:45'),
-			recorded_by: isCareHome ? 'Esi Quaye' : 'Yaw Boateng',
-			readings: [
-				{ id: 'bp', label: 'Blood pressure', value: '126/78', tone: 'neutral' },
-				{ id: 'pulse', label: 'Pulse', value: '72 bpm', tone: 'neutral' },
-				{
-					id: 'sugar',
-					label: 'Blood sugar',
-					value: '6.1 mmol/L',
-					tone: 'neutral',
-				},
-				{ id: 'temp', label: 'Temperature', value: '36.5 °C', tone: 'neutral' },
-			],
-		},
-		today: [
-			{
-				id: 't1',
-				time: '07:45',
-				title: 'Readings taken',
-				detail: `All within usual range · ${isCareHome ? 'Esi Quaye' : 'Yaw Boateng'}`,
-			},
-			{
-				id: 't2',
-				time: isCareHome ? '06:00' : '07:30',
-				title: isCareHome ? 'Night handover' : 'Morning visit',
-				detail: isCareHome
-					? 'Slept well · Kwame Addo'
-					: 'Washed and dressed · Yaw Boateng',
-			},
-		],
+const trimmedOrNull = (value?: string) => value?.trim() || null
+
+export function validateResidentInput(input: Partial<CreateResidentInput>) {
+	if (!input.first_name?.trim() || !input.last_name?.trim()) {
+		return 'First and last name are required.'
 	}
+	if (!input.date_of_birth || !dayjs(input.date_of_birth).isValid()) {
+		return 'A valid date of birth is required.'
+	}
+	if (dayjs(input.date_of_birth).isAfter(dayjs())) {
+		return 'Date of birth cannot be in the future.'
+	}
+	if (input.service !== 'CARE_HOME' && input.service !== 'HOMECARE') {
+		return 'Choose care home or homecare.'
+	}
+	return null
 }
 
-export function getResidentSummary(resident: Resident) {
-	return resident.id === 'res_kofi_asante'
-		? kofiSummary
-		: genericSummary(resident)
+export function createResident(input: CreateResidentInput): Resident {
+	const now = new Date()
+	const slug = `${input.first_name}_${input.last_name}`
+		.toLowerCase()
+		.replace(/[^a-z0-9_]/g, '')
+	const isCareHome = input.service === 'CARE_HOME'
+
+	const resident: Resident = {
+		id: `res_${slug}_${now.getTime().toString(36)}`,
+		code: nextCode(input.service),
+		first_name: input.first_name.trim(),
+		last_name: input.last_name.trim(),
+		preferred_name: trimmedOrNull(input.preferred_name),
+		gender: input.gender,
+		date_of_birth: new Date(input.date_of_birth),
+		ghana_card_number: trimmedOrNull(input.ghana_card_number),
+		nhis_number: trimmedOrNull(input.nhis_number),
+		languages: input.languages,
+		service: input.service,
+		room: isCareHome ? trimmedOrNull(input.room) : null,
+		unit_name: isCareHome ? trimmedOrNull(input.unit_name) : null,
+		area: isCareHome ? null : trimmedOrNull(input.area),
+		address: isCareHome ? null : trimmedOrNull(input.address),
+		status: 'ACTIVE',
+		risk_level: input.risk_level,
+		risk_reason:
+			input.risk_level === 'LOW' ? null : trimmedOrNull(input.risk_reason),
+		allergies: input.allergies,
+		conditions: input.conditions,
+		contacts: input.contacts,
+		admitted_at: now,
+		care_plan_id: null,
+		care_plan_status: null,
+		care_plan_reviewed_at: null,
+		care_plan_review_due_at: null,
+		latest_note: { summary: 'Admitted', recorded_at: now },
+		created_at: now,
+		updated_at: now,
+	}
+
+	residents.unshift(resident)
+	return resident
 }

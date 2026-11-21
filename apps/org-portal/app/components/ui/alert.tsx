@@ -9,6 +9,7 @@ const alertVariants = cva(
 		variants: {
 			tone: {
 				critical: 'bg-critical-tint text-critical-ink',
+				warning: 'bg-warning-tint text-warning-ink',
 				success: 'bg-success-tint text-success-ink',
 				info: 'bg-info-tint text-info-ink',
 			},

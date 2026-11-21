@@ -69,7 +69,7 @@ export function AppRail() {
 	return (
 		<nav
 			aria-label="Modules"
-			className="bg-navy sticky top-0 flex h-svh w-[72px] shrink-0 flex-col items-center gap-2 overflow-y-auto py-4"
+			className="bg-navy sticky top-0 flex h-svh w-[72px] shrink-0 flex-col items-center gap-2 overflow-y-auto py-4 print:hidden"
 		>
 			<Link to="/" aria-label="Overview" className="mb-4">
 				<BrandMark />

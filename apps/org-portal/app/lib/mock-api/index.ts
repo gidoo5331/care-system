@@ -2,27 +2,36 @@
  * Stands in for the backend until it exists. Selected by leaving API_ADDRESS
  * empty; requests then go to MOCK_API_ADDRESS and are answered here, so the
  * api/ layer, session and middleware run exactly as they will against the
- * real service.
+ * real service. Server-only — the browser reaches it via routes/mock-api.$.ts.
  */
+import { MOCK_API_ADDRESS } from './address'
+import {
+	filterCarePlans,
+	findCarePlan,
+	findCarePlanForResident,
+	getCarePlanCounts,
+} from './care-plans'
 import { fail, noContent, ok, paginate, readBearer, readJson } from './http'
+import {
+	addPrescription,
+	getMedicationCounts,
+	getMedicationRound,
+	validatePrescriptionInput,
+} from './medication'
 import { careHomeOverview, homecareOverview } from './overview'
 import {
+	createResident,
 	filterResidents,
+	findResident,
 	getResidentCounts,
-	getResidentSummary,
-	residents,
+	validateResidentInput,
 } from './residents'
+import { getResidentSummary } from './summary'
 import { demoUser, workspaces } from './users'
-
-export const MOCK_API_ADDRESS = 'mock://care-platform/api'
 
 const DEMO_PASSWORD = 'password'
 const ACCESS_TOKEN_PREFIX = 'demo-access-'
 const REFRESH_TOKEN_PREFIX = 'demo-refresh-'
-
-export function isMockApiUrl(url: string) {
-	return url.startsWith(MOCK_API_ADDRESS)
-}
 
 function issueTokenPair() {
 	const stamp = Date.now().toString(36)
@@ -62,40 +71,112 @@ function handleAuth(method: string, path: string, init?: RequestInit) {
 	return null
 }
 
+interface WorkspaceRequest {
+	method: string
+	rest: string
+	workspace: Workspace
+	searchParams: URLSearchParams
+	init?: RequestInit
+}
+
+function handleResidents({
+	method,
+	rest,
+	searchParams,
+	init,
+}: WorkspaceRequest) {
+	if (rest === '/residents') {
+		if (method === 'POST') {
+			const input = readJson(init) as Partial<CreateResidentInput>
+			const error = validateResidentInput(input)
+			if (error) return fail(error, 400)
+			return ok(createResident(input as CreateResidentInput), 201)
+		}
+		return ok(paginate(filterResidents(searchParams), searchParams))
+	}
+
+	if (rest === '/residents/counts') return ok(getResidentCounts())
+
+	const match = rest.match(/^\/residents\/([^/]+)(\/[a-z-]+)?$/)
+	if (!match) return null
+
+	const resident = findResident(match[1] ?? '')
+	if (!resident) return fail('Resident not found', 404)
+
+	switch (`${method} ${match[2] ?? ''}`) {
+		case 'GET ':
+			return ok(resident)
+		case 'GET /summary':
+			return ok(getResidentSummary(resident))
+		case 'GET /care-plan': {
+			const plan = findCarePlanForResident(resident.id)
+			return plan ? ok(plan) : fail('No care plan yet', 404)
+		}
+		case 'POST /prescriptions': {
+			const input = readJson(init) as Partial<CreatePrescriptionInput>
+			const error = validatePrescriptionInput(resident, input)
+			if (error) return fail(error.message, error.status)
+			return ok(
+				addPrescription(resident, input as CreatePrescriptionInput),
+				201,
+			)
+		}
+		default:
+			return null
+	}
+}
+
+function handleCarePlans({ method, rest, searchParams }: WorkspaceRequest) {
+	if (method !== 'GET') return null
+	if (rest === '/care-plans') {
+		return ok(paginate(filterCarePlans(searchParams), searchParams))
+	}
+	if (rest === '/care-plans/counts') return ok(getCarePlanCounts())
+
+	const match = rest.match(/^\/care-plans\/([^/]+)$/)
+	if (!match) return null
+	const plan = findCarePlan(match[1] ?? '')
+	return plan ? ok(plan) : fail('Care plan not found', 404)
+}
+
+function handleMedication({ method, rest, searchParams }: WorkspaceRequest) {
+	if (method !== 'GET') return null
+	if (rest === '/medication-rounds') return ok(getMedicationRound(searchParams))
+	if (rest === '/medication/counts') return ok(getMedicationCounts())
+	return null
+}
+
 function handleWorkspace(
 	method: string,
 	path: string,
 	searchParams: URLSearchParams,
+	init?: RequestInit,
 ) {
 	const match = path.match(/^\/v1\/admin\/workspaces\/([^/]+)(\/.*)$/)
-	if (!match || method !== 'GET') return null
+	if (!match) return null
 
 	const [, workspaceId, rest = ''] = match
 	const workspace = workspaces.find((w) => w.id === workspaceId)
 	if (!workspace) return fail('Workspace not found', 404)
 
-	if (rest === '/overview') {
+	if (method === 'GET' && rest === '/overview') {
 		return ok(
 			workspace.type === 'CARE_HOME' ? careHomeOverview : homecareOverview,
 		)
 	}
 
-	if (rest === '/residents') {
-		return ok(paginate(filterResidents(searchParams), searchParams))
+	const request: WorkspaceRequest = {
+		method,
+		rest,
+		workspace,
+		searchParams,
+		init,
 	}
-
-	if (rest === '/residents/counts') {
-		return ok(getResidentCounts())
-	}
-
-	const residentMatch = rest.match(/^\/residents\/([^/]+)(\/summary)?$/)
-	if (residentMatch) {
-		const resident = residents.find((r) => r.id === residentMatch[1])
-		if (!resident) return fail('Resident not found', 404)
-		return ok(residentMatch[2] ? getResidentSummary(resident) : resident)
-	}
-
-	return null
+	return (
+		handleResidents(request) ??
+		handleCarePlans(request) ??
+		handleMedication(request)
+	)
 }
 
 export async function mockFetch(
@@ -118,7 +199,7 @@ export async function mockFetch(
 	}
 
 	return (
-		handleWorkspace(method, path, parsed.searchParams) ??
+		handleWorkspace(method, path, parsed.searchParams, init) ??
 		fail(`No mock for ${method} ${path}`, 404)
 	)
 }

@@ -1,6 +1,6 @@
 import { config } from 'dotenv'
 import * as z from 'zod'
-import { MOCK_API_ADDRESS } from '../mock-api'
+import { MOCK_API_ADDRESS } from '../mock-api/address'
 
 config()
 

@@ -11,6 +11,7 @@ import {
 	TableHeader,
 	TableRow,
 } from '~/components/ui/table'
+import { getDoseDetail } from '~/lib/medication.utils'
 import { cn } from '~/lib/utils'
 
 const DOSE_STYLE: Record<DoseStatus, { label: string; className: string }> = {
@@ -34,7 +35,10 @@ function DoseTile({ dose }: { dose: ScheduledDose }) {
 			)}
 		>
 			<b className="block font-semibold">{style.label}</b>
-			<span className="block min-h-[18px]">{dose.detail}</span>
+			{/* "in 2 h" depends on the viewer's clock. */}
+			<span className="block min-h-[18px]" suppressHydrationWarning>
+				{getDoseDetail(dose)}
+			</span>
 		</div>
 	)
 }
@@ -66,7 +70,7 @@ export function MedicationToday({
 				<CardTitle id="medication-today">Medication today</CardTitle>
 				<CardAction>
 					<Link
-						to={`${medicationPath}/new`}
+						to={`/medication/prescriptions/new?resident=${residentId}`}
 						className={buttonVariants({ variant: 'outline' })}
 					>
 						<PlusIcon strokeWidth={1.75} />

@@ -15,6 +15,8 @@ export const QUERY_KEYS = {
 	RESIDENTS: 'residents',
 	RESIDENT: 'resident',
 	RESIDENT_SUMMARY: 'resident-summary',
+	CARE_PLANS: 'care-plans',
+	MEDICATION_ROUND: 'medication-round',
 } as const
 
 export const PAGINATION_DEFAULTS = {
