@@ -1,6 +1,7 @@
 import { BellIcon, SearchIcon } from 'lucide-react'
 import { Fragment, type PropsWithChildren, type ReactNode } from 'react'
 import { Link, useMatches } from 'react-router'
+import { MobileNav } from './mobile-nav'
 import { NavUser } from './nav-user'
 import { WorkspaceSwitcher } from './workspace-switcher'
 
@@ -49,7 +50,8 @@ export function ModuleLayout({
 			</aside>
 
 			<div className="flex min-w-0 flex-1 flex-col">
-				<header className="bg-card flex h-16 items-center gap-4 border-b px-4 md:px-8 print:hidden">
+				<header className="bg-card flex h-16 items-center gap-2 border-b px-4 md:gap-4 md:px-8 print:hidden">
+					<MobileNav label={label} nav={nav} />
 					<nav
 						aria-label="Breadcrumb"
 						className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden text-sm whitespace-nowrap"
@@ -59,18 +61,21 @@ export function ModuleLayout({
 							return (
 								<Fragment key={crumb.id}>
 									{index > 0 ? (
-										<span aria-hidden="true" className="text-subtle-foreground">
+										<span
+											aria-hidden="true"
+											className="text-subtle-foreground hidden md:inline"
+										>
 											/
 										</span>
 									) : null}
 									{isLast ? (
-										<span aria-current="page" className="font-semibold">
+										<span aria-current="page" className="truncate font-semibold">
 											{crumb.name}
 										</span>
 									) : (
 										<Link
 											to={crumb.pathname}
-											className="text-muted-foreground hover:text-foreground no-underline"
+											className="text-muted-foreground hover:text-foreground hidden no-underline md:inline"
 										>
 											{crumb.name}
 										</Link>

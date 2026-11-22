@@ -15,14 +15,14 @@ import { BrandMark } from './brand-mark'
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip'
 import { cn } from '~/lib/utils'
 
-interface RailItem {
+export interface RailItem {
 	label: string
 	to: string
 	icon: LucideIcon
 	end?: boolean
 }
 
-const MODULES: Array<RailItem> = [
+export const MODULES: Array<RailItem> = [
 	{ label: 'Overview', to: '/', icon: LayoutDashboardIcon, end: true },
 	{ label: 'Residents and clients', to: '/residents', icon: UsersIcon },
 	{ label: 'Care plans', to: '/care-plans', icon: ClipboardListIcon },
@@ -33,7 +33,7 @@ const MODULES: Array<RailItem> = [
 	{ label: 'Reports', to: '/reports', icon: ChartColumnIcon },
 ]
 
-const SETTINGS: RailItem = {
+export const SETTINGS: RailItem = {
 	label: 'Settings',
 	to: '/settings',
 	icon: SettingsIcon,
@@ -70,7 +70,7 @@ export function AppRail() {
 	return (
 		<nav
 			aria-label="Modules"
-			className="bg-navy sticky top-0 flex h-svh w-[72px] shrink-0 flex-col items-center gap-2 overflow-y-auto py-4 print:hidden"
+			className="bg-navy sticky top-0 hidden h-svh w-[72px] shrink-0 flex-col items-center gap-2 overflow-y-auto py-4 md:flex print:hidden"
 		>
 			<Link to="/" aria-label="Overview" className="mb-4">
 				<BrandMark />
