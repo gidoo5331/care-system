@@ -6,6 +6,7 @@ interface OverviewStat {
 	value: string
 	detail: string
 	tone: StatusTone
+	href?: string
 }
 
 interface OverviewAttentionItem {

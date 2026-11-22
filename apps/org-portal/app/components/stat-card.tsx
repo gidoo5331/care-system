@@ -1,3 +1,4 @@
+import { Link } from 'react-router'
 import { cn } from '~/lib/utils'
 
 const DETAIL_TONE_CLASS: Record<StatusTone, string> = {
@@ -13,8 +14,8 @@ interface Props {
 }
 
 export function StatCard({ stat }: Props) {
-	return (
-		<div className="bg-card flex flex-col gap-1 rounded-xl border px-6 py-5">
+	const content = (
+		<>
 			<p className="text-muted-foreground m-0 text-sm font-medium">
 				{stat.label}
 			</p>
@@ -27,6 +28,21 @@ export function StatCard({ stat }: Props) {
 			>
 				{stat.detail}
 			</p>
-		</div>
+		</>
+	)
+	const className = 'bg-card flex flex-col gap-1 rounded-xl border px-6 py-5'
+
+	if (!stat.href) return <div className={className}>{content}</div>
+
+	return (
+		<Link
+			to={stat.href}
+			className={cn(
+				className,
+				'text-foregroundhover:border-border-strong hover:bg-muted/40 focus-visible:ring-ring/40 no-underline transition-colors outline-none focus-visible:ring-[3px]',
+			)}
+		>
+			{content}
+		</Link>
 	)
 }

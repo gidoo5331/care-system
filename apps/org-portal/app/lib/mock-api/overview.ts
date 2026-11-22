@@ -6,6 +6,7 @@ export const careHomeOverview: WorkspaceOverview = {
 			value: '42',
 			detail: '2 in hospital · 3 beds free',
 			tone: 'neutral',
+			href: '/residents?service=CARE_HOME',
 		},
 		{
 			id: 'staff',
@@ -13,6 +14,7 @@ export const careHomeOverview: WorkspaceOverview = {
 			value: '11 of 12',
 			detail: '1 sick call, cover needed',
 			tone: 'warning',
+			href: '/staff?view=on-shift',
 		},
 		{
 			id: 'medication',
@@ -20,6 +22,7 @@ export const careHomeOverview: WorkspaceOverview = {
 			value: '87%',
 			detail: '8 doses still due',
 			tone: 'warning',
+			href: '/medication',
 		},
 		{
 			id: 'incidents',
@@ -27,6 +30,7 @@ export const careHomeOverview: WorkspaceOverview = {
 			value: '3',
 			detail: '1 safeguarding concern',
 			tone: 'critical',
+			href: '/incidents?view=open',
 		},
 	],
 	needs_attention: [
@@ -111,6 +115,7 @@ export const homecareOverview: WorkspaceOverview = {
 			value: '31',
 			detail: '4 new this month',
 			tone: 'neutral',
+			href: '/residents?service=HOMECARE',
 		},
 		{
 			id: 'visits',
@@ -118,6 +123,7 @@ export const homecareOverview: WorkspaceOverview = {
 			value: '31 of 54',
 			detail: '2 running late',
 			tone: 'warning',
+			href: '/visits',
 		},
 		{
 			id: 'medication',
@@ -125,6 +131,7 @@ export const homecareOverview: WorkspaceOverview = {
 			value: '92%',
 			detail: '3 still due',
 			tone: 'warning',
+			href: '/medication',
 		},
 		{
 			id: 'incidents',
@@ -132,6 +139,7 @@ export const homecareOverview: WorkspaceOverview = {
 			value: '1',
 			detail: 'No safeguarding concerns',
 			tone: 'neutral',
+			href: '/incidents?view=open',
 		},
 	],
 	needs_attention: [

@@ -56,6 +56,7 @@ function buildStats(stats: VisitDay['stats']): Array<OverviewStat> {
 			value: String(stats.late_or_missed),
 			detail: stats.late_or_missed ? 'carers notified' : 'none so far',
 			tone: stats.late_or_missed ? 'warning' : 'neutral',
+			href: '/visits?view=late',
 		},
 		{
 			id: 'unassigned',
@@ -63,6 +64,7 @@ function buildStats(stats: VisitDay['stats']): Array<OverviewStat> {
 			value: String(stats.unassigned),
 			detail: stats.unassigned ? 'need a carer' : 'all covered',
 			tone: stats.unassigned ? 'critical' : 'neutral',
+			href: '/visits?view=unassigned',
 		},
 	]
 }
